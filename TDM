@@ -1,0 +1,119 @@
+import groovy.json.JsonSlurper
+
+//portal configuration
+PORTAL_HOST = 'http://54.214.95.28'
+PORTAL_PORT = '18080'
+
+
+node {
+   //pipeline variables
+    def token = ''
+    def projectId = '2351'
+    def versionId = '2352'    
+    def generatorId = '2358'
+    def jobId = ''
+    def projectName = 'Devops1'	
+
+    //execute pipeline steps
+    token = login()
+    jobId = publishData(projectId, versionId, generatorId)
+    echo 'Publish Data jobId = ' + jobId
+	publishJobStatus(jobId.toString())
+    downloadArtifact(jobId.toString())
+    publishToGithub(jobId.toString())
+}
+
+def login(){
+    stage('login to TDM'){
+            def response = httpRequest customHeaders: [[maskValue: false, name: "Authorization", value: "Basic YWRtaW5pc3RyYXRvcjptYXJtaXRl"]], httpMode: 'POST', acceptType : 'APPLICATION_JSON', contentType: 'APPLICATION_JSON',
+            url: PORTAL_HOST+':'+PORTAL_PORT+'/TestDataManager/user/login'
+            def body = readJSON file: '', text: response.content
+            echo body['token']
+            token = body['token']
+            return token;
+    }
+  } //end login
+
+def publishData(String projectId, String versionId, String generatorId){
+  stage('publish data'){
+    def request = '''{
+      "name":"User_Generator",
+      "description":"User Generator",
+      "projectId":''' + projectId + ''',
+      "versionId":''' + versionId + ''',
+      "type":"PUBLISHJOB",
+      "origin":"generation",
+      "scheduledTime":''' + System.currentTimeMillis() + ''',
+      "email":"veeranna.a.muchakhandi@capgemini.com",
+      "parameters":{
+      "generatorId":''' + generatorId + ''',
+      "jobType":"PUBLISH",
+      "title":"Publish using Jenkins",
+      "publishTo":"XLSX",
+      "repeatCount":200
+      }
+     }'''
+
+    def response = httpRequest customHeaders: [[maskValue: false, name: 'Authorization', value: 'Bearer '+token]],contentType: 'APPLICATION_JSON', httpMode: 'POST', responseHandle: 'LEAVE_OPEN',
+    requestBody: request, url: PORTAL_HOST+':'+PORTAL_PORT+'/TDMJobService/api/ca/v1/jobs'
+    def body = readJSON file: '', text: response.content
+    def jobId = body['jobId']
+    return jobId
+  }//end stage
+}//end publishData
+
+
+def getProjectId(String projectName) {
+    stage ('Get ProjectID') {
+	    def response = httpRequest customHeaders: [[maskValue: false, name: 'Authorization', value: 'Bearer '+token]], responseHandle: 'LEAVE_OPEN', acceptType : 'APPLICATION_JSON',
+              url: PORTAL_HOST+':'+PORTAL_PORT+'/TDMProjectService/api/ca/v1/projects'
+              def body = readJSON file: '', text: response.content
+              def list = new JsonSlurper().parseText( response.content )
+			  list.each {
+					if (it.'name' == projectName) {
+						projectId = it.'id'.toString()
+						echo projectId
+					}				  				  
+			  }
+			  return projectId;
+    }
+}
+
+def downloadArtifact(String jobId) {
+	stage ('Download Artifact') {
+		httpRequest acceptType: 'APPLICATION_ZIP', consoleLogResponseBody: false, contentType: 'APPLICATION_JSON', customHeaders: [[maskValue: true, name: 'Authorization', value: 'Bearer '+token]], httpMode: 'POST', outputFile: 'TDM-Jenkins-PublishData\\publish.zip', url: PORTAL_HOST+':'+PORTAL_PORT+'/TDMJobService/api/ca/v1/jobs/'+jobId+'/actions/downloadArtifact'
+	}
+}
+
+def publishJobStatus(String jobId) {
+	stage('Check Publish Job Status') {	
+		def isJobCompleted = 0
+		def status = ''		
+		while(!isJobCompleted) {		
+			def response = httpRequest customHeaders: [[maskValue: false, name: 'Authorization', value: 'Bearer '+token]],contentType: 'APPLICATION_JSON', httpMode: 'GET', url: PORTAL_HOST+':'+PORTAL_PORT+'/TDMJobService/api/ca/v1/jobs/'+jobId			
+			def body = readJSON file: '', text: response.content
+			status = body['status']
+			print status
+			if (status == 'Completed') {			
+				isJobCompleted = 1			
+			}
+			sleep(time:3,unit:"SECONDS")		
+		}	
+	}
+
+}
+def publishToGithub(String jobId) {
+	stage('publish test data') {	
+		
+		sh '''
+		cd TDM-Jenkins-PublishData/
+	    ls
+	    
+		unzip -o publish.zip
+        echo "after unzip"
+        ls
+	}
+	
+
+}
+
