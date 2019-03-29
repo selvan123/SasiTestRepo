@@ -25,12 +25,17 @@ node {
 
 def login(){
     stage('login to TDM'){
-            def response = httpRequest customHeaders: [[maskValue: false, name: "Authorization", value: "Basic YWRtaW5pc3RyYXRvcjptYXJtaXRl"]], httpMode: 'POST', acceptType : 'APPLICATION_JSON', contentType: 'APPLICATION_JSON',
-            url: PORTAL_HOST+':'+PORTAL_PORT+'/TestDataManager/user/login'
-            def body = readJSON file: '', text: response.content
-            echo body['token']
-            token = body['token']
-            return token;
+            withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'TDM_Secret',
+		usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+
+		def response = httpRequest customHeaders: [[maskValue: false, name: "Authorization", value: $PASSWORD]], httpMode: 'POST', acceptType : 'APPLICATION_JSON', contentType: 'APPLICATION_JSON',
+			    url: PORTAL_HOST+':'+PORTAL_PORT+'/TestDataManager/user/login'
+			    def body = readJSON file: '', text: response.content
+			    echo body['token']
+			    token = body['token']
+			    return token;
+
+		 } 
     }
   } //end login
 
