@@ -28,7 +28,7 @@ def login(){
             withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'TDM_Secret',
 		usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
 
-		def response = httpRequest customHeaders: [[maskValue: false, name: "Authorization", value: $PASSWORD]], httpMode: 'POST', acceptType : 'APPLICATION_JSON', contentType: 'APPLICATION_JSON',
+		def response = httpRequest customHeaders: [[maskValue: false, name: "Authorization", value: build.getBuildVariables().get('PASSWORD')]], httpMode: 'POST', acceptType : 'APPLICATION_JSON', contentType: 'APPLICATION_JSON',
 			    url: PORTAL_HOST+':'+PORTAL_PORT+'/TestDataManager/user/login'
 			    def body = readJSON file: '', text: response.content
 			    echo body['token']
