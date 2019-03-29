@@ -112,6 +112,29 @@ def publishToGithub(String jobId) {
 		unzip -o publish.zip
         echo "after unzip"
         ls
+	
+         #git init
+        #git rm --cached Petclinic.xlsx
+
+         #git add Petclinic.xlsx
+
+         #git commit -m "pushing the updated data========>"
+        #git remote rm origin
+        #git remote add origin https://github.com/selvan123/SasiTestRepo.git
+        #git remote -v
+        #git pull origin master --allow-unrelated-histories
+        	#	'''
+        		//echo "publishing...."
+
+
+ 		/*def cmd = 'sh publish.sh'
+        def sout = new StringBuffer(), serr = new StringBuffer()
+        def proc = cmd.execute()
+        proc.consumeProcessOutput(sout, serr)
+        proc.waitForOrKill(1000)
+        println sout*/
+
+         //echo "Done...!!!!"
 	}
 	
 
