@@ -49,7 +49,7 @@ def publishData(String projectId, String versionId, String generatorId){
       "type":"PUBLISHJOB",
       "origin":"generation",
       "scheduledTime":''' + System.currentTimeMillis() + ''',
-      "email":"veeranna.a.muchakhandi@capgemini.com",
+      "email":"sasikiran.g@capgemini.com",
       "parameters":{
       "generatorId":''' + generatorId + ''',
       "jobType":"PUBLISH",
